@@ -6,18 +6,24 @@
 # WARNING
 # This is for tests only and not meant to be safe to use
 
-
 from vyper.interfaces import ERC20
 
-Transfer: event({_from: indexed(address), _to: indexed(address), _value: uint256})
-Approval: event({_owner: indexed(address), _spender: indexed(address), _value: uint256})
+event Transfer:
+    _from: indexed(address)
+    _to: indexed(address)
+    _value: uint256
 
-name: public(string[64])
-symbol: public(string[32])
+event Approval:
+    _owner: indexed(address)
+    _spender: indexed(address)
+    _value: uint256
+
+name: public(String[64])
+symbol: public(String[32])
 decimals: public(uint256)
 
-balanceOf: public(map(address, uint256))
-allowances: map(address, map(address, uint256))
+balanceOf: public(HashMap[address, uint256])
+allowances: HashMap[address, HashMap[address, uint256]]
 total_supply: uint256
 
 underlying_token: ERC20
@@ -25,8 +31,8 @@ exchangeRateStored: public(uint256)  # cERC20 mock
 supplyRatePerBlock: public(uint256)  # cERC20 mock
 accrualBlockNumber: public(uint256)  # cERC20 mock
 
-@public
-def __init__(_name: string[64], _symbol: string[32], _decimals: uint256, _supply: uint256,
+@external
+def __init__(_name: String[64], _symbol: String[32], _decimals: uint256, _supply: uint256,
              _token_addr: address, exchange_rate: uint256):
     init_supply: uint256 = _supply * 10 ** _decimals
     self.name = _name
@@ -38,11 +44,11 @@ def __init__(_name: string[64], _symbol: string[32], _decimals: uint256, _supply
     self.exchangeRateStored = exchange_rate
     self.accrualBlockNumber = block.number
     self.supplyRatePerBlock = 0
-    log.Transfer(ZERO_ADDRESS, msg.sender, init_supply)
+    log Transfer(ZERO_ADDRESS, msg.sender, init_supply)
 
 
-@public
-@constant
+@external
+@view
 def totalSupply() -> uint256:
     """
     @dev Total number of tokens in existence.
@@ -50,8 +56,8 @@ def totalSupply() -> uint256:
     return self.total_supply
 
 
-@public
-@constant
+@external
+@view
 def allowance(_owner : address, _spender : address) -> uint256:
     """
     @dev Function to check the amount of tokens that an owner allowed to a spender.
@@ -62,7 +68,7 @@ def allowance(_owner : address, _spender : address) -> uint256:
     return self.allowances[_owner][_spender]
 
 
-@public
+@external
 def transfer(_to : address, _value : uint256) -> bool:
     """
     @dev Transfer token for a specified address
@@ -73,11 +79,11 @@ def transfer(_to : address, _value : uint256) -> bool:
     #       so the following subtraction would revert on insufficient balance
     self.balanceOf[msg.sender] -= _value
     self.balanceOf[_to] += _value
-    log.Transfer(msg.sender, _to, _value)
+    log Transfer(msg.sender, _to, _value)
     return True
 
 
-@public
+@external
 def transferFrom(_from : address, _to : address, _value : uint256) -> bool:
     """
      @dev Transfer tokens from one address to another.
@@ -94,11 +100,11 @@ def transferFrom(_from : address, _to : address, _value : uint256) -> bool:
     # NOTE: vyper does not allow underflows
     #      so the following subtraction would revert on insufficient allowance
     self.allowances[_from][msg.sender] -= _value
-    log.Transfer(_from, _to, _value)
+    log Transfer(_from, _to, _value)
     return True
 
 
-@public
+@external
 def approve(_spender : address, _value : uint256) -> bool:
     """
     @dev Approve the passed address to spend the specified amount of tokens on behalf of msg.sender.
@@ -110,11 +116,11 @@ def approve(_spender : address, _value : uint256) -> bool:
     @param _value The amount of tokens to be spent.
     """
     self.allowances[msg.sender][_spender] = _value
-    log.Approval(msg.sender, _spender, _value)
+    log Approval(msg.sender, _spender, _value)
     return True
 
 
-@private
+@internal
 def _burn(_to: address, _value: uint256):
     """
     @dev Internal function that burns an amount of the token of a given
@@ -125,10 +131,10 @@ def _burn(_to: address, _value: uint256):
     assert _to != ZERO_ADDRESS
     self.total_supply -= _value
     self.balanceOf[_to] -= _value
-    log.Transfer(_to, ZERO_ADDRESS, _value)
+    log Transfer(_to, ZERO_ADDRESS, _value)
 
 
-@public
+@external
 def burn(_value: uint256):
     """
     @dev Burn an amount of the token of msg.sender.
@@ -137,7 +143,7 @@ def burn(_value: uint256):
     self._burn(msg.sender, _value)
 
 
-@public
+@external
 def burnFrom(_to: address, _value: uint256):
     """
     @dev Burn an amount of the token from a given account.
@@ -149,7 +155,7 @@ def burnFrom(_to: address, _value: uint256):
 
 
 # cERC20-specific methods
-@public
+@external
 def mint(mintAmount: uint256) -> uint256:
     """
      @notice Sender supplies assets into the market and receives cTokens in exchange
@@ -164,7 +170,7 @@ def mint(mintAmount: uint256) -> uint256:
     return 0
 
 
-@public
+@external
 def redeem(redeemTokens: uint256) -> uint256:
     """
      @notice Sender redeems cTokens in exchange for the underlying asset
@@ -179,7 +185,7 @@ def redeem(redeemTokens: uint256) -> uint256:
     return 0
 
 
-@public
+@external
 def redeemUnderlying(redeemAmount: uint256) -> uint256:
     """
      @notice Sender redeems cTokens in exchange for a specified amount of underlying asset
@@ -194,12 +200,12 @@ def redeemUnderlying(redeemAmount: uint256) -> uint256:
     return 0
 
 
-@public
+@external
 def set_exchange_rate(rate: uint256):
     self.exchangeRateStored = rate
 
 
-@public
+@external
 def exchangeRateCurrent() -> uint256:
     rate: uint256 = self.exchangeRateStored
     self.exchangeRateStored = rate  # Simulate blockchain write
