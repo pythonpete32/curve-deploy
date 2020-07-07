@@ -834,10 +834,19 @@ def withdraw_admin_fees():
     _precisions: uint256[N_COINS] = PRECISION_MUL
 
     for i in range(N_COINS):
-        c: address = self.coins[i]
         value: uint256 = self.admin_balances[i]
         if value > 0:
-            assert ERC20(c).transfer(msg.sender, value)
+            _response: Bytes[32] = raw_call(
+                self.coins[i],
+                concat(
+                    method_id("transfer(address,uint256)"),
+                    convert(msg.sender, bytes32),
+                    convert(value, bytes32)
+                ),
+                max_outsize=32
+            )
+            if len(_response) > 0:
+                assert convert(_response, bool)
             self.admin_balances[i] = 0
 
 
