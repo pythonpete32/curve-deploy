@@ -10,8 +10,7 @@
 # * Tests
 
 from vyper.interfaces import ERC20
-from interfaces import ERC20m as ERC20m
-
+from interfaces import ERC20m
 
 interface aToken:
     def redeem(_amount: uint256): nonpayable
@@ -356,13 +355,13 @@ def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256):
     # Initial invariant
     D0: uint256 = 0
     old_balances: uint256[N_COINS] = self._balances()
-    if token_supply > 0:
+    if token_supply != 0:
         D0 = self.get_D_precisions(old_balances, amp)
     new_balances: uint256[N_COINS] = old_balances
 
     for i in range(N_COINS):
         if token_supply == 0:
-            assert amounts[i] > 0
+            assert amounts[i] != 0
         new_balances[i] = old_balances[i] + amounts[i]
 
     # Invariant after change
@@ -374,7 +373,7 @@ def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256):
     # We need to recalculate the invariant accounting for fees
     # to calculate fair user's share
     D2: uint256 = D1
-    if token_supply > 0:
+    if token_supply != 0:
         # Only account for fees if we are not the first to deposit
         for i in range(N_COINS):
             ideal_balance: uint256 = D1 * old_balances[i] / D0
@@ -385,7 +384,7 @@ def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256):
                 difference = new_balances[i] - ideal_balance
             xs: uint256 = old_balances[i] + new_balances[i]
             fees[i] = self._dynamic_fee(xs, ys, _fee, _feemul) * difference / FEE_DENOMINATOR
-            if _admin_fee > 0:
+            if _admin_fee != 0:
                 self.admin_balances[i] += fees[i] * _admin_fee / FEE_DENOMINATOR
             new_balances[i] -= fees[i]
         D2 = self.get_D_precisions(new_balances, amp)
@@ -601,7 +600,7 @@ def _exchange(i: int128, j: int128, dx: uint256) -> uint256:
             (xp[i] + x) / 2, (xp[j] + y) / 2, self.fee, self.offpeg_fee_multiplier
         ) / FEE_DENOMINATOR
     dy_admin_fee: uint256 = dy_fee * self.admin_fee / FEE_DENOMINATOR
-    if dy_admin_fee > 0:
+    if dy_admin_fee != 0:
         self.admin_balances[j] += dy_admin_fee / precisions[j]
 
     _dy: uint256 = (dy - dy_fee) / precisions[j]
@@ -641,7 +640,7 @@ def exchange_underlying(i: int128, j: int128, dx: uint256, min_dy: uint256):
         ),
         max_outsize=32
     )
-    if len(_response) > 0:
+    if len(_response) != 0:
         assert convert(_response, bool)
 
     ERC20(u_coin_i).approve(self.aave_lending_pool, dx)
@@ -658,7 +657,7 @@ def exchange_underlying(i: int128, j: int128, dx: uint256, min_dy: uint256):
         ),
         max_outsize=32
     )
-    if len(_response) > 0:
+    if len(_response) != 0:
         assert convert(_response, bool)
 
     log TokenExchangeUnderlying(msg.sender, i, dx, j, dy)
@@ -688,7 +687,7 @@ def remove_liquidity_imbalance(amounts: uint256[N_COINS], max_burn_amount: uint2
     assert not self.is_killed
 
     token_supply: uint256 = self.token.totalSupply()
-    assert token_supply > 0
+    assert token_supply != 0
     _fee: uint256 = self.fee * N_COINS / (4 * (N_COINS - 1))
     _feemul: uint256 = self.offpeg_fee_multiplier
     _admin_fee: uint256 = self.admin_fee
@@ -711,13 +710,13 @@ def remove_liquidity_imbalance(amounts: uint256[N_COINS], max_burn_amount: uint2
             difference = new_balances[i] - ideal_balance
         xs: uint256 = new_balances[i] + old_balances[i]
         fees[i] = self._dynamic_fee(xs, ys, _fee, _feemul) * difference / FEE_DENOMINATOR
-        if _admin_fee > 0:
+        if _admin_fee != 0:
             self.admin_balances[i] += fees[i] * _admin_fee / FEE_DENOMINATOR
         new_balances[i] -= fees[i]
     D2: uint256 = self.get_D_precisions(new_balances, amp)
 
     token_amount: uint256 = (D0 - D2) * token_supply / D0
-    assert token_amount > 0
+    assert token_amount != 0
     assert token_amount <= max_burn_amount, "Slippage screwed you"
 
     for i in range(N_COINS):
@@ -776,7 +775,7 @@ def commit_new_fee(new_fee: uint256, new_admin_fee: uint256, new_offpeg_fee_mult
 def apply_new_fee():
     assert msg.sender == self.owner  # dev: only owner
     assert block.timestamp >= self.admin_actions_deadline  # dev: insufficient time
-    assert self.admin_actions_deadline > 0  # dev: no active action
+    assert self.admin_actions_deadline != 0  # dev: no active action
 
     self.admin_actions_deadline = 0
     _fee: uint256 = self.future_fee
@@ -812,7 +811,7 @@ def commit_transfer_ownership(_owner: address):
 def apply_transfer_ownership():
     assert msg.sender == self.owner  # dev: only owner
     assert block.timestamp >= self.transfer_ownership_deadline  # dev: insufficient time
-    assert self.transfer_ownership_deadline > 0  # dev: no active transfer
+    assert self.transfer_ownership_deadline != 0  # dev: no active transfer
 
     self.transfer_ownership_deadline = 0
     _owner: address = self.future_owner
@@ -835,7 +834,7 @@ def withdraw_admin_fees():
 
     for i in range(N_COINS):
         value: uint256 = self.admin_balances[i]
-        if value > 0:
+        if value != 0:
             _response: Bytes[32] = raw_call(
                 self.coins[i],
                 concat(
@@ -845,7 +844,7 @@ def withdraw_admin_fees():
                 ),
                 max_outsize=32
             )
-            if len(_response) > 0:
+            if len(_response) != 0:
                 assert convert(_response, bool)
             self.admin_balances[i] = 0
 
