@@ -378,7 +378,8 @@ def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256):
 
     # Take coins from the sender
     for i in range(N_COINS):
-        assert ERC20(self.coins[i]).transferFrom(msg.sender, self, amounts[i])
+        if amounts[i] != 0:
+            assert ERC20(self.coins[i]).transferFrom(msg.sender, self, amounts[i])
 
     # Mint pool tokens
     self.token.mint(msg.sender, mint_amount)
