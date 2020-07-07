@@ -30,8 +30,8 @@ PRECISION_MUL: constant(uint256[N_COINS]) = ___PRECISION_MUL___
 #     PRECISION / convert(10 ** 6, uint256)]   # USDT
 
 
-admin_actions_delay: constant(uint256) = 3 * 86400
-min_ramp_time: constant(uint256) = 86400
+ADMIN_ACTIONS_DELAY: constant(uint256) = 3 * 86400
+MIN_RAMP_TIME: constant(uint256) = 86400
 
 # Events
 event TokenExchange:
@@ -114,9 +114,9 @@ admin_fee: public(uint256)  # admin_fee * 1e10
 aave_lending_pool: address
 aave_referral: uint256
 
-max_admin_fee: constant(uint256) = 5 * 10 ** 9
-max_fee: constant(uint256) = 5 * 10 ** 9
-max_A: constant(uint256) = 10 ** 6
+MAX_ADMIN_FEE: constant(uint256) = 5 * 10 ** 9
+MAX_FEE: constant(uint256) = 5 * 10 ** 9
+MAX_A: constant(uint256) = 10 ** 6
 
 owner: public(address)
 token: ERC20m
@@ -134,7 +134,7 @@ initial_A_time: public(uint256)
 future_A_time: public(uint256)
 
 kill_deadline: uint256
-kill_deadline_dt: constant(uint256) = 2 * 30 * 86400
+KILL_DEADLINE_DT: constant(uint256) = 2 * 30 * 86400
 is_killed: bool
 
 
@@ -164,7 +164,7 @@ def __init__(_coins: address[N_COINS],
     self.offpeg_fee_multiplier = 0
     self.admin_fee = 0
     self.owner = msg.sender
-    self.kill_deadline = block.timestamp + kill_deadline_dt
+    self.kill_deadline = block.timestamp + KILL_DEADLINE_DT
     self.is_killed = False
     self.token = ERC20m(_pool_token)
     self.aave_lending_pool = _aave_lending_pool
@@ -724,7 +724,7 @@ def remove_liquidity_imbalance(amounts: uint256[N_COINS], max_burn_amount: uint2
 @external
 def ramp_A(_future_A: uint256, _future_time: uint256):
     assert msg.sender == self.owner  # dev: only owner
-    assert _future_time >= block.timestamp + min_ramp_time  # dev: insufficient time
+    assert _future_time >= block.timestamp + MIN_RAMP_TIME  # dev: insufficient time
 
     _initial_A: uint256 = self._A()
     self.initial_A = _initial_A
@@ -752,11 +752,11 @@ def stop_ramp_A():
 def commit_new_fee(new_fee: uint256, new_admin_fee: uint256, new_offpeg_fee_multiplier: uint256):
     assert msg.sender == self.owner  # dev: only owner
     assert self.admin_actions_deadline == 0  # dev: active action
-    assert new_admin_fee <= max_admin_fee  # dev: admin fee exceeds maximum
-    assert new_fee <= max_fee  # dev: fee exceeds maximum
-    assert new_offpeg_fee_multiplier * new_fee <= max_fee * FEE_DENOMINATOR  # dev: offpeg multiplier exceeds maximum
+    assert new_fee <= MAX_FEE  # dev: fee exceeds maximum
+    assert new_admin_fee <= MAX_ADMIN_FEE  # dev: admin fee exceeds maximum
+    assert new_offpeg_fee_multiplier * new_fee <= MAX_FEE * FEE_DENOMINATOR  # dev: offpeg multiplier exceeds maximum
 
-    _deadline: uint256 = block.timestamp + admin_actions_delay
+    _deadline: uint256 = block.timestamp + ADMIN_ACTIONS_DELAY
     self.admin_actions_deadline = _deadline
     self.future_fee = new_fee
     self.future_admin_fee = new_admin_fee
@@ -794,7 +794,7 @@ def commit_transfer_ownership(_owner: address):
     assert msg.sender == self.owner  # dev: only owner
     assert self.transfer_ownership_deadline == 0  # dev: active transfer
 
-    _deadline: uint256 = block.timestamp + admin_actions_delay
+    _deadline: uint256 = block.timestamp + ADMIN_ACTIONS_DELAY
     self.transfer_ownership_deadline = _deadline
     self.future_owner = _owner
 
