@@ -730,8 +730,8 @@ def remove_liquidity_imbalance(amounts: uint256[N_COINS], max_burn_amount: uint2
 ### Admin functions ###
 @external
 def ramp_A(_future_A: uint256, _future_time: uint256):
-    assert msg.sender == self.owner
-    assert _future_time >= block.timestamp + min_ramp_time
+    assert msg.sender == self.owner  # dev: only owner
+    assert _future_time >= block.timestamp + min_ramp_time  # dev: insufficient time
 
     _initial_A: uint256 = self._A()
     self.initial_A = _initial_A
@@ -744,7 +744,7 @@ def ramp_A(_future_A: uint256, _future_time: uint256):
 
 @external
 def stop_ramp_A():
-    assert msg.sender == self.owner
+    assert msg.sender == self.owner  # dev: only owner
 
     current_A: uint256 = self._A()
     self.initial_A = current_A
@@ -757,11 +757,11 @@ def stop_ramp_A():
 
 @external
 def commit_new_fee(new_fee: uint256, new_admin_fee: uint256, new_offpeg_fee_multiplier: uint256):
-    assert msg.sender == self.owner
-    assert self.admin_actions_deadline == 0
-    assert new_admin_fee <= max_admin_fee
-    assert new_fee <= max_fee
-    assert new_offpeg_fee_multiplier * new_fee <= max_fee * FEE_DENOMINATOR
+    assert msg.sender == self.owner  # dev: only owner
+    assert self.admin_actions_deadline == 0  # dev: active action
+    assert new_admin_fee <= max_admin_fee  # dev: admin fee exceeds maximum
+    assert new_fee <= max_fee  # dev: fee exceeds maximum
+    assert new_offpeg_fee_multiplier * new_fee <= max_fee * FEE_DENOMINATOR  # dev: offpeg multiplier exceeds maximum
 
     _deadline: uint256 = block.timestamp + admin_actions_delay
     self.admin_actions_deadline = _deadline
@@ -774,8 +774,9 @@ def commit_new_fee(new_fee: uint256, new_admin_fee: uint256, new_offpeg_fee_mult
 
 @external
 def apply_new_fee():
-    assert msg.sender == self.owner
-    assert self.admin_actions_deadline <= block.timestamp and self.admin_actions_deadline > 0
+    assert msg.sender == self.owner  # dev: only owner
+    assert block.timestamp >= self.admin_actions_deadline  # dev: insufficient time
+    assert self.admin_actions_deadline > 0  # dev: no active action
 
     self.admin_actions_deadline = 0
     _fee: uint256 = self.future_fee
@@ -790,15 +791,15 @@ def apply_new_fee():
 
 @external
 def revert_new_parameters():
-    assert msg.sender == self.owner
+    assert msg.sender == self.owner  # dev: only owner
 
     self.admin_actions_deadline = 0
 
 
 @external
 def commit_transfer_ownership(_owner: address):
-    assert msg.sender == self.owner
-    assert self.transfer_ownership_deadline == 0
+    assert msg.sender == self.owner  # dev: only owner
+    assert self.transfer_ownership_deadline == 0  # dev: active transfer
 
     _deadline: uint256 = block.timestamp + admin_actions_delay
     self.transfer_ownership_deadline = _deadline
@@ -809,9 +810,9 @@ def commit_transfer_ownership(_owner: address):
 
 @external
 def apply_transfer_ownership():
-    assert msg.sender == self.owner
-    assert block.timestamp >= self.transfer_ownership_deadline\
-        and self.transfer_ownership_deadline > 0
+    assert msg.sender == self.owner  # dev: only owner
+    assert block.timestamp >= self.transfer_ownership_deadline  # dev: insufficient time
+    assert self.transfer_ownership_deadline > 0  # dev: no active transfer
 
     self.transfer_ownership_deadline = 0
     _owner: address = self.future_owner
@@ -822,14 +823,14 @@ def apply_transfer_ownership():
 
 @external
 def revert_transfer_ownership():
-    assert msg.sender == self.owner
+    assert msg.sender == self.owner  # dev: only owner
 
     self.transfer_ownership_deadline = 0
 
 
 @external
 def withdraw_admin_fees():
-    assert msg.sender == self.owner
+    assert msg.sender == self.owner  # dev: only owner
     _precisions: uint256[N_COINS] = PRECISION_MUL
 
     for i in range(N_COINS):
@@ -846,25 +847,25 @@ def donate_admin_fees():
     Just in case admin balances somehow become higher than total (rounding error?)
     this can be used to fix the state, too
     """
-    assert msg.sender == self.owner
+    assert msg.sender == self.owner  # dev: only owner
     self.admin_balances = empty(uint256[N_COINS])
 
 
 @external
 def kill_me():
-    assert msg.sender == self.owner
-    assert self.kill_deadline > block.timestamp
+    assert msg.sender == self.owner  # dev: only owner
+    assert self.kill_deadline > block.timestamp  # dev: insufficient time
     self.is_killed = True
 
 
 @external
 def unkill_me():
-    assert msg.sender == self.owner
+    assert msg.sender == self.owner  # dev: only owner
     self.is_killed = False
 
 
 @external
 def set_aave_referral(referral_code: uint256):
-    assert msg.sender == self.owner
-    assert referral_code < 2 ** 16  # uint16 check
+    assert msg.sender == self.owner  # dev: only owner
+    assert referral_code < 2 ** 16  # dev: uint16 overflow
     self.aave_referral = referral_code
