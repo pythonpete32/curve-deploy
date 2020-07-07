@@ -171,21 +171,6 @@ def __init__(_coins: address[N_COINS],
     self.aave_referral = 0
 
 
-@internal
-def aave_deposit(_reserve: address, _amount: uint256, _referralCode: uint256):
-    # def deposit(_reserve: address, _amount: uint256, _referralCode: uint16): modifying
-    # Vyper cannot automatically make this ABI until uint16 arrives
-    assert _referralCode < 2 ** 16
-
-    data: Bytes[100] = concat(
-        b'\xd2\xd0\xe0\x66',                        # ABI MethodID
-        convert(_reserve, bytes32),                 # address
-        convert(_amount, bytes32),                  # uint256
-        convert(_referralCode, bytes32)             # uint16
-    )
-    raw_call(self.aave_lending_pool, data)
-
-
 @view
 @internal
 def _A() -> uint256:
@@ -644,9 +629,18 @@ def exchange_underlying(i: int128, j: int128, dx: uint256, min_dy: uint256):
         assert convert(_response, bool)
 
     ERC20(u_coin_i).approve(self.aave_lending_pool, dx)
-    self.aave_deposit(u_coin_i, dx, self.aave_referral)
-    aToken(coin_j).redeem(dy)
 
+    # deposit to aave lending pool
+    raw_call(
+        self.aave_lending_pool,
+        concat(
+            b'\xd2\xd0\xe0\x66',                    # ABI MethodID
+            convert(u_coin_i, bytes32),             # address
+            convert(dx, bytes32),                   # uint256
+            convert(self.aave_referral, bytes32)    # uint16
+        )
+    )
+    aToken(coin_j).redeem(dy)
 
     _response = raw_call(
         u_coin_i,
