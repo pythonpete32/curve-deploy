@@ -450,7 +450,8 @@ def get_y_D(A_: uint256, i: int128, xp: uint256[N_COINS], D: uint256) -> uint256
     """
     # x in the input is converted to the same price/precision
 
-    assert (i >= 0) and (i < N_COINS)
+    assert i >= 0       # dev: i below zero
+    assert i < N_COINS  # dev: i above N_COINS
 
     c: uint256 = D
     S_: uint256 = 0
@@ -675,7 +676,7 @@ def remove_liquidity_imbalance(amounts: uint256[N_COINS], max_burn_amount: uint2
     assert not self.is_killed
 
     token_supply: uint256 = self.token.totalSupply()
-    assert token_supply != 0
+    assert token_supply != 0  # dev: zero total supply
 
     _fee: uint256 = self.fee * N_COINS / (4 * (N_COINS - 1))
     _feemul: uint256 = self.offpeg_fee_multiplier
@@ -705,7 +706,7 @@ def remove_liquidity_imbalance(amounts: uint256[N_COINS], max_burn_amount: uint2
     D2: uint256 = self.get_D_precisions(new_balances, amp)
 
     token_amount: uint256 = (D0 - D2) * token_supply / D0
-    assert token_amount != 0
+    assert token_amount != 0  # dev: zero tokens burned
     assert token_amount <= max_burn_amount, "Slippage screwed you"
 
     self.token.burnFrom(msg.sender, token_amount)  # dev: insufficient funds
