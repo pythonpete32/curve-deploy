@@ -321,7 +321,7 @@ def calc_token_amount(amounts: uint256[N_COINS], deposit: bool) -> uint256:
 @nonreentrant('lock')
 def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256):
     # Amounts is amounts of c-tokens
-    assert not self.is_killed
+    assert not self.is_killed  # dev: is killed
 
     fees: uint256[N_COINS] = empty(uint256[N_COINS])
     _fee: uint256 = self.fee * N_COINS / (4 * (N_COINS - 1))
@@ -536,6 +536,8 @@ def remove_liquidity_one_coin(_token_amount: uint256, i: int128, min_uamount: ui
     """
     Remove _amount of liquidity all in a form of coin i
     """
+    assert not self.is_killed  # dev: is killed
+
     dy: uint256 = self._calc_withdraw_one_coin(_token_amount, i)
     assert dy >= min_uamount, "Not enough coins removed"
 
@@ -565,7 +567,7 @@ def get_dy(i: int128, j: int128, dx: uint256) -> uint256:
 
 @internal
 def _exchange(i: int128, j: int128, dx: uint256) -> uint256:
-    assert not self.is_killed
+    assert not self.is_killed  # dev: is killed
     # dx and dy are in c-tokens
 
     xp: uint256[N_COINS] = self._balances()
@@ -673,7 +675,7 @@ def remove_liquidity(_amount: uint256, min_amounts: uint256[N_COINS]):
 @external
 @nonreentrant('lock')
 def remove_liquidity_imbalance(amounts: uint256[N_COINS], max_burn_amount: uint256):
-    assert not self.is_killed
+    assert not self.is_killed  # dev: is killed
 
     token_supply: uint256 = self.token.totalSupply()
     assert token_supply != 0  # dev: zero total supply
@@ -852,7 +854,7 @@ def donate_admin_fees():
 @external
 def kill_me():
     assert msg.sender == self.owner  # dev: only owner
-    assert self.kill_deadline > block.timestamp  # dev: insufficient time
+    assert self.kill_deadline > block.timestamp  # dev: deadline has passed
     self.is_killed = True
 
 
