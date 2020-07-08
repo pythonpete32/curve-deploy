@@ -10,7 +10,7 @@
 # * Tests
 
 from vyper.interfaces import ERC20
-from interfaces import ERC20m
+import CurveToken as ERC20m
 
 interface aToken:
     def redeem(_amount: uint256): nonpayable
@@ -538,7 +538,7 @@ def remove_liquidity_one_coin(_token_amount: uint256, i: int128, min_uamount: ui
     dy: uint256 = self._calc_withdraw_one_coin(_token_amount, i)
     assert dy >= min_uamount, "Not enough coins removed"
 
-    self.token.burnFrom(msg.sender, _token_amount)
+    self.token.burnFrom(msg.sender, _token_amount)  # dev: insufficient funds
     assert ERC20(self.coins[i]).transfer(msg.sender, dy)
 
     log RemoveLiquidityOne(msg.sender, _token_amount, dy)
@@ -655,6 +655,8 @@ def exchange_underlying(i: int128, j: int128, dx: uint256, min_dy: uint256):
 @nonreentrant('lock')
 def remove_liquidity(_amount: uint256, min_amounts: uint256[N_COINS]):
     total_supply: uint256 = self.token.totalSupply()
+    self.token.burnFrom(msg.sender, _amount)  # dev: insufficient funds
+
     fees: uint256[N_COINS] = empty(uint256[N_COINS])
     amounts: uint256[N_COINS] = self._balances()
 
@@ -663,8 +665,6 @@ def remove_liquidity(_amount: uint256, min_amounts: uint256[N_COINS]):
         assert value >= min_amounts[i], "Withdrawal resulted in fewer coins than expected"
         amounts[i] = value
         assert ERC20(self.coins[i]).transfer(msg.sender, value)
-
-    self.token.burnFrom(msg.sender, _amount)  # Will raise if not enough
 
     log RemoveLiquidity(msg.sender, amounts, fees, total_supply - _amount)
 
@@ -676,6 +676,7 @@ def remove_liquidity_imbalance(amounts: uint256[N_COINS], max_burn_amount: uint2
 
     token_supply: uint256 = self.token.totalSupply()
     assert token_supply != 0
+
     _fee: uint256 = self.fee * N_COINS / (4 * (N_COINS - 1))
     _feemul: uint256 = self.offpeg_fee_multiplier
     _admin_fee: uint256 = self.admin_fee
@@ -707,9 +708,9 @@ def remove_liquidity_imbalance(amounts: uint256[N_COINS], max_burn_amount: uint2
     assert token_amount != 0
     assert token_amount <= max_burn_amount, "Slippage screwed you"
 
+    self.token.burnFrom(msg.sender, token_amount)  # dev: insufficient funds
     for i in range(N_COINS):
         assert ERC20(self.coins[i]).transfer(msg.sender, amounts[i])
-    self.token.burnFrom(msg.sender, token_amount)  # Will raise if not enough
 
     log RemoveLiquidityImbalance(msg.sender, amounts, fees, D1, token_supply - token_amount)
 

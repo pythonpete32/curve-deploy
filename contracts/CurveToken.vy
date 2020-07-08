@@ -132,7 +132,7 @@ def approve(_spender : address, _value : uint256) -> bool:
 
 
 @external
-def mint(_to: address, _value: uint256):
+def mint(_to: address, _value: uint256) -> bool:
     """
     @dev Mint an amount of the token and assigns it to an account.
          This encapsulates the modification of balances such that the
@@ -145,38 +145,21 @@ def mint(_to: address, _value: uint256):
     self.total_supply += _value
     self.balanceOf[_to] += _value
     log Transfer(ZERO_ADDRESS, _to, _value)
-
-
-@internal
-def _burn(_to: address, _value: uint256):
-    """
-    @dev Internal function that burns an amount of the token of a given
-         account.
-    @param _to The account whose tokens will be burned.
-    @param _value The amount that will be burned.
-    """
-    assert _to != ZERO_ADDRESS
-    self.total_supply -= _value
-    self.balanceOf[_to] -= _value
-    log Transfer(_to, ZERO_ADDRESS, _value)
+    return True
 
 
 @external
-def burn(_value: uint256):
-    """
-    @dev Burn an amount of the token of msg.sender.
-    @param _value The amount that will be burned.
-    """
-    assert msg.sender == self.minter, "Only minter is allowed to burn"
-    self._burn(msg.sender, _value)
-
-
-@external
-def burnFrom(_to: address, _value: uint256):
+def burnFrom(_to: address, _value: uint256) -> bool:
     """
     @dev Burn an amount of the token from a given account.
     @param _to The account whose tokens will be burned.
     @param _value The amount that will be burned.
     """
-    assert msg.sender == self.minter, "Only minter is allowed to burn"
-    self._burn(_to, _value)
+    assert msg.sender == self.minter
+    assert _to != ZERO_ADDRESS
+
+    self.total_supply -= _value
+    self.balanceOf[_to] -= _value
+    log Transfer(_to, ZERO_ADDRESS, _value)
+
+    return True
