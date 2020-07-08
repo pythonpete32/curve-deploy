@@ -192,7 +192,7 @@ def A() -> uint256:
     return self._A()
 
 
-@view
+@pure
 @internal
 def _dynamic_fee(xpi: uint256, xpj: uint256, _fee: uint256, _feemul: uint256) -> uint256:
     if _feemul <= FEE_DENOMINATOR:
@@ -229,8 +229,8 @@ def _balances() -> uint256[N_COINS]:
     return result
 
 
+@pure
 @internal
-@view
 def get_D(xp: uint256[N_COINS], amp: uint256) -> uint256:
     """
     D invariant calculation in non-overflowing integer operations
@@ -267,8 +267,8 @@ def get_D(xp: uint256[N_COINS], amp: uint256) -> uint256:
     return D
 
 
-@internal
 @view
+@internal
 def get_D_precisions(coin_balances: uint256[N_COINS], amp: uint256) -> uint256:
     xp: uint256[N_COINS] = PRECISION_MUL
     for i in range(N_COINS):
@@ -276,8 +276,8 @@ def get_D_precisions(coin_balances: uint256[N_COINS], amp: uint256) -> uint256:
     return self.get_D(xp, amp)
 
 
-@external
 @view
+@external
 def get_virtual_price() -> uint256:
     """
     Returns portfolio virtual price (for calculating profit)
@@ -290,8 +290,8 @@ def get_virtual_price() -> uint256:
     return D * PRECISION / token_supply
 
 
-@external
 @view
+@external
 def calc_token_amount(amounts: uint256[N_COINS], deposit: bool) -> uint256:
     """
     Simplified method to calculate addition or reduction in token supply at
@@ -387,8 +387,8 @@ def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256):
     log AddLiquidity(msg.sender, amounts, fees, D1, token_supply + mint_amount)
 
 
-@internal
 @view
+@internal
 def get_y(i: int128, j: int128, x: uint256, xp: uint256[N_COINS]) -> uint256:
     """
     Calculate x[j] if one makes x[i] = x
@@ -436,8 +436,8 @@ def get_y(i: int128, j: int128, x: uint256, xp: uint256[N_COINS]) -> uint256:
     return y
 
 
+@pure
 @internal
-@view
 def get_y_D(A_: uint256, i: int128, xp: uint256[N_COINS], D: uint256) -> uint256:
     """
     Calculate x[i] if one reduces D from being calculated for xp to D
@@ -481,8 +481,8 @@ def get_y_D(A_: uint256, i: int128, xp: uint256[N_COINS], D: uint256) -> uint256
     return y
 
 
-@internal
 @view
+@internal
 def _calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> uint256:
     # First, need to calculate
     # * Get current D
@@ -523,8 +523,8 @@ def _calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> uint256:
     return dy
 
 
-@external
 @view
+@external
 def calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> uint256:
     return self._calc_withdraw_one_coin(_token_amount, i)
 
@@ -544,8 +544,8 @@ def remove_liquidity_one_coin(_token_amount: uint256, i: int128, min_uamount: ui
     log RemoveLiquidityOne(msg.sender, _token_amount, dy)
 
 
-@external
 @view
+@external
 def get_dy(i: int128, j: int128, dx: uint256) -> uint256:
     # dx and dy in c-units
     precisions: uint256[N_COINS] = PRECISION_MUL

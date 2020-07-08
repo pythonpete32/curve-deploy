@@ -2,11 +2,11 @@
 
 from vyper.interfaces import ERC20
 
+implements: ERC20
+
 interface Curve:
     def owner() -> address: view
 
-
-implements: ERC20
 
 event Transfer:
     _from: indexed(address)
@@ -58,8 +58,8 @@ def set_name(_name: String[64], _symbol: String[32]):
     self.symbol = _symbol
 
 
-@external
 @view
+@external
 def totalSupply() -> uint256:
     """
     @dev Total number of tokens in existence.
@@ -67,8 +67,8 @@ def totalSupply() -> uint256:
     return self.total_supply
 
 
-@external
 @view
+@external
 def allowance(_owner : address, _spender : address) -> uint256:
     """
     @dev Function to check the amount of tokens that an owner allowed to a spender.
@@ -98,8 +98,6 @@ def transfer(_to : address, _value : uint256) -> bool:
 def transferFrom(_from : address, _to : address, _value : uint256) -> bool:
     """
      @dev Transfer tokens from one address to another.
-          Note that while this function emits a Transfer event, this is not required as per the specification,
-          and other compliant implementations may not emit the event.
      @param _from address The address which you want to send tokens from
      @param _to address The address which you want to transfer to
      @param _value uint256 the amount of tokens to be transferred
