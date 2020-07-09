@@ -2,7 +2,7 @@ import pytest
 
 N_COINS = 3
 PRECISIONS = [18, 6, 6]
-
+TETHERED = [False, True, False]
 
 # isolation setup
 
@@ -31,13 +31,12 @@ def charlie(accounts):
 # contract deployments
 
 @pytest.fixture(scope="module")
-def underlying_coins(ERC20Mock, alice):
+def underlying_coins(ERC20Mock, ERC20MockReturnNone, alice):
     coins = []
 
     for i in range(N_COINS):
-        coin = ERC20Mock.deploy(
-            f"Coin {i}", f"C{i}", PRECISIONS[i], {'from': alice}
-        )
+        deployer = ERC20MockReturnNone if TETHERED[i] else ERC20Mock
+        coin = deployer.deploy(f"Coin {i}", f"C{i}", PRECISIONS[i], {'from': alice})
         coins.append(coin)
 
     yield coins
@@ -49,19 +48,24 @@ def pool_token(CurveToken, alice):
 
 
 @pytest.fixture(scope="module")
-def aave_coins(ATokenMock, alice):
+def aave_coins(ATokenMock, alice, underlying_coins, aave_lending_pool):
     coins = []
-    for i in range(N_COINS):
-        coin = ATokenMock.deploy(f"ACoin {i}", f"A{i}", PRECISIONS[i], {'from': alice})
-        coins.append(coin)
+    for i, coin in enumerate(underlying_coins):
+        coin_address = aave_lending_pool.deployToken(f"ACoin {i}", f"A{i}", coin).return_value
+        coins.append(ATokenMock.at(coin_address))
 
     yield coins
 
 
 @pytest.fixture(scope="module")
-def swap(StableSwap, alice, underlying_coins, aave_coins, pool_token):
+def aave_lending_pool(AaveLendingPoolMock, alice):
+    yield AaveLendingPoolMock.deploy({'from': alice})
+
+
+@pytest.fixture(scope="module")
+def swap(StableSwap, alice, underlying_coins, aave_coins, pool_token, aave_lending_pool):
     contract = StableSwap.deploy(
-        aave_coins, underlying_coins, pool_token, pool_token, 360 * 2, 10**7, {'from': alice}
+        aave_coins, underlying_coins, pool_token, aave_lending_pool, 360 * 2, 0, {'from': alice}
     )
     pool_token.set_minter(contract, {'from': alice})
 
