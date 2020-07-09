@@ -198,7 +198,7 @@ def _dynamic_fee(xpi: uint256, xpj: uint256, _fee: uint256, _feemul: uint256) ->
     if _feemul <= FEE_DENOMINATOR:
         return _fee
     else:
-        xps2: uint256 = xpi + xpj
+        xps2: uint256 = (xpi + xpj)
         xps2 *= xps2  # Doing just ** 2 can overflow apparently
         return (_feemul * _fee) / (
             (_feemul - FEE_DENOMINATOR) * 4 * xpi * xpj / xps2 + \
@@ -401,7 +401,13 @@ def get_y(i: int128, j: int128, x: uint256, xp: uint256[N_COINS]) -> uint256:
     """
     # x in the input is converted to the same price/precision
 
-    assert (i != j) and (i >= 0) and (j >= 0) and (i < N_COINS) and (j < N_COINS)
+    assert i != j       # dev: same coin
+    assert j >= 0       # dev: j below zero
+    assert j < N_COINS  # dev: j above N_COINS
+
+    # should be unreachable, but good for safety
+    assert i >= 0
+    assert i < N_COINS
 
     amp: uint256 = self._A()
     D: uint256 = self.get_D(xp, amp)
@@ -581,9 +587,12 @@ def _exchange(i: int128, j: int128, dx: uint256) -> uint256:
     dy_fee: uint256 = dy * self._dynamic_fee(
             (xp[i] + x) / 2, (xp[j] + y) / 2, self.fee, self.offpeg_fee_multiplier
         ) / FEE_DENOMINATOR
-    dy_admin_fee: uint256 = dy_fee * self.admin_fee / FEE_DENOMINATOR
-    if dy_admin_fee != 0:
-        self.admin_balances[j] += dy_admin_fee / precisions[j]
+
+    _admin_fee: uint256 = self.admin_fee
+    if _admin_fee != 0:
+        dy_admin_fee: uint256 = dy_fee * _admin_fee / FEE_DENOMINATOR
+        if dy_admin_fee != 0:
+            self.admin_balances[j] += dy_admin_fee / precisions[j]
 
     _dy: uint256 = (dy - dy_fee) / precisions[j]
 
@@ -611,7 +620,9 @@ def exchange_underlying(i: int128, j: int128, dx: uint256, min_dy: uint256):
     u_coin_i: address = self.underlying_coins[i]
     u_coin_j: address = self.underlying_coins[j]
     coin_j: address = self.coins[j]
+    lending_pool: address = self.aave_lending_pool
 
+    # transfer underlying coin from msg.sender to self
     _response: Bytes[32] = raw_call(
         u_coin_i,
         concat(
@@ -625,13 +636,24 @@ def exchange_underlying(i: int128, j: int128, dx: uint256, min_dy: uint256):
     if len(_response) != 0:
         assert convert(_response, bool)
 
-    ERC20(u_coin_i).approve(self.aave_lending_pool, dx)
+    # approve transfer of underlying coin to aave lending pool
+    _response = raw_call(
+        u_coin_i,
+        concat(
+            method_id("approve(address,uint256)"),
+            convert(lending_pool, bytes32),
+            convert(dx, bytes32)
+        ),
+        max_outsize=32
+    )
+    if len(_response) != 0:
+        assert convert(_response, bool)
 
     # deposit to aave lending pool
     raw_call(
-        self.aave_lending_pool,
+        lending_pool,
         concat(
-            b'\xd2\xd0\xe0\x66',                    # ABI MethodID
+            b'\xd2\xd0\xe0\x66',                    # deposit(address,uint256,uint16)
             convert(u_coin_i, bytes32),             # address
             convert(dx, bytes32),                   # uint256
             convert(self.aave_referral, bytes32)    # uint16
@@ -640,7 +662,7 @@ def exchange_underlying(i: int128, j: int128, dx: uint256, min_dy: uint256):
     aToken(coin_j).redeem(dy)
 
     _response = raw_call(
-        u_coin_i,
+        u_coin_j,
         concat(
             method_id("transfer(address,uint256)"),
             convert(msg.sender, bytes32),
