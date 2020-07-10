@@ -71,3 +71,12 @@ def test_min_amount_with_slippage(bob, swap, aave_coins, pool_token):
     amounts[2] += 5 * 10**5
     with brownie.reverts("Slippage screwed you"):
         swap.add_liquidity(amounts, 3 * 10**18, {'from': bob})
+
+
+def test_increased_a_token_balance(alice, bob, swap, aave_coins, pool_token):
+    for i, coin in enumerate(aave_coins):
+        coin._mint_for_testing(swap, INITIAL_AMOUNTS[i], {'from': alice})
+
+    swap.add_liquidity(INITIAL_AMOUNTS, 0, {'from': bob})
+
+    assert pool_token.balanceOf(alice) == pool_token.balanceOf(bob) * 2

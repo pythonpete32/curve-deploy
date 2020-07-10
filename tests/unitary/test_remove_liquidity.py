@@ -53,3 +53,15 @@ def test_below_min_amount(alice, swap, aave_coins, pool_token, idx):
 def test_amount_exceeds_balance(alice, swap, aave_coins, pool_token):
     with brownie.reverts("dev: insufficient funds"):
         swap.remove_liquidity(3 * 10**24 + 1, [0, 0, 0], {'from': alice})
+
+
+@pytest.mark.parametrize("min_amount", [INITIAL_AMOUNTS, [0, 0, 0]])
+def test_increased_a_token_balance(alice, swap, aave_coins, pool_token, min_amount):
+    for i, coin in enumerate(aave_coins):
+        coin._mint_for_testing(swap, INITIAL_AMOUNTS[i], {'from': alice})
+
+    swap.remove_liquidity(3 * 10**24, min_amount, {'from': alice})
+
+    for coin, amount in zip(aave_coins, INITIAL_AMOUNTS):
+        assert coin.balanceOf(alice) == amount * 2
+        assert coin.balanceOf(swap) == 0
