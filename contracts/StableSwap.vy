@@ -844,22 +844,11 @@ def revert_transfer_ownership():
 @external
 def withdraw_admin_fees():
     assert msg.sender == self.owner  # dev: only owner
-    _precisions: uint256[N_COINS] = PRECISION_MUL
 
     for i in range(N_COINS):
         value: uint256 = self.admin_balances[i]
         if value != 0:
-            _response: Bytes[32] = raw_call(
-                self.coins[i],
-                concat(
-                    method_id("transfer(address,uint256)"),
-                    convert(msg.sender, bytes32),
-                    convert(value, bytes32)
-                ),
-                max_outsize=32
-            )
-            if len(_response) != 0:
-                assert convert(_response, bool)
+            assert ERC20(self.coins[i]).transfer(msg.sender, value)
             self.admin_balances[i] = 0
 
 
