@@ -5,6 +5,8 @@ import "./ATokenMock.sol";
 
 contract AaveLendingPoolMock {
 
+    uint16 public lastReferral;
+
     mapping (address => address) aTokens;
 
     function deployToken(string calldata _name, string calldata _symbol, address _underlying) external returns (ATokenMock) {
@@ -22,6 +24,7 @@ contract AaveLendingPoolMock {
     **/
     function deposit(address _reserve, uint256 _amount, uint16 _referralCode) external payable {
         require (aTokens[_reserve] != address(0));
+        lastReferral = _referralCode;
         IERC20(_reserve).transferFrom(msg.sender, aTokens[_reserve], _amount);
     }
 

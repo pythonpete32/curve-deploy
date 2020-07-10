@@ -28,7 +28,6 @@ interface IERC20 {
 }
 
 
-
 contract ATokenMock {
 
     using SafeMath for uint256;
