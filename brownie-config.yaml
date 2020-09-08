@@ -3,3 +3,11 @@ reports:
   exclude_paths:
     - contracts/testing/*.*
     - contracts/gauges/*.*
+
+hypothesis:
+  phases:
+    explicit: true
+    reuse: true
+    generate: true
+    target: true
+    shrink: false
