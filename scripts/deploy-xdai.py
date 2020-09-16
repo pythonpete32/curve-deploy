@@ -46,7 +46,8 @@ registry = Registry.deploy([ZERO_ADDRESS] * 4, {'from': admin, 'required_confs':
 
 coin_a.transfer(contract, 100e18, {'from': accounts[1], 'required_confs': confs})
 
-liquidity_gauge_rewards = LiquidityGaugeReward.deploy(lp_token, '0xbE45e0E4a72aEbF9D08F93E64701964d2CC4cF96', contract, coin_a, {'from': admin, 'required_confs': confs})
+# This is not working on xDAI for some reason
+#liquidity_gauge_rewards = LiquidityGaugeReward.deploy(lp_token, '0xbE45e0E4a72aEbF9D08F93E64701964d2CC4cF96', contract, coin_a, {'from': admin, 'required_confs': confs})
 
 for account in DISTRIBUTION_ADDRESSES:
     coin_a.transfer(account, DISTRIBUTION_AMOUNT, {'from': admin, 'required_confs': confs})
