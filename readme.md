@@ -28,10 +28,6 @@ then run launch a docker container with an interactive terminal
 docker run -it <IMAGE_ID> /bin/bash
 ```
 
-<br>
-
-##  💻 Deploy
-
 edit the seed in the python script for the deployment 
 ```
 vim ./scripts/deploy-xdai.py
@@ -40,6 +36,21 @@ vim ./scripts/deploy-xdai.py
 then run the associated bash script
 ```
 ./scripts/deploy-xdai.sh
+```
+
+<br>
+
+##  💻 Manual
+
+```
+git clone https://github.com/pythonpete32/curve-deploy.git && cd ./curve-deploy
+python3 -m venv venv
+
+export WEB3_INFURA_PROJECT_ID=e22eadb98be944d18e48ab4bec7ecf3f
+. ./venv/bin/activate
+pip install -r requirements.txt
+
+brownie run deploy-rinkeby --network rinkeby
 ```
 <br>
 
