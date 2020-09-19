@@ -14,7 +14,7 @@ confs = 1
 ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 ARAGON_AGENT = "0xa01556dB443292BD3754C1CCd0B9ecFE8CE9E356"
 DISTRIBUTION_AMOUNT = 10 ** 6 * 10 ** 18
-DISTRIBUTION_ADDRESSES = ["0x306469457266CBBe7c0505e8Aad358622235e768", "0x8401Eb5ff34cc943f096A32EF3d5113FEbE8D4Eb", "0xb4124cEB3451635DAcedd11767f004d8a28c6eE7"]
+DISTRIBUTION_ADDRESSES = ["0xb4124cEB3451635DAcedd11767f004d8a28c6eE7", "0x8401Eb5ff34cc943f096A32EF3d5113FEbE8D4Eb"]
 
 def main():
     accounts.from_mnemonic(SEED)
@@ -41,11 +41,11 @@ def main():
     AntPool.add_liquidity(["100000000000000", "200000000000000"], 0, {'from': admin})
 
     # take a closer look at these contracts
-    DaoJonesRewards = CurveRewards.deploy(lp_token_AntPool, ant, {'from': accounts[0], 'required_confs': confs})
-    DaoJonesRewards.setRewardDistribution(accounts[0], {'from': accounts[0], 'required_confs': confs})
+    #DaoJonesRewards = CurveRewards.deploy(lp_token_AntPool, ant, {'from': accounts[0], 'required_confs': confs})
+    #DaoJonesRewards.setRewardDistribution(accounts[0], {'from': accounts[0], 'required_confs': confs})
     registry = Registry.deploy([ZERO_ADDRESS] * 4, {'from': admin, 'required_confs': confs})
 
-    ant.transfer(DaoJonesRewards, 100e18, {'from': accounts[0], 'required_confs': confs})
+    #ant.transfer(DaoJonesRewards, 100e18, {'from': accounts[0], 'required_confs': confs})
 
     for account in DISTRIBUTION_ADDRESSES:
         ant.transfer(account, DISTRIBUTION_AMOUNT, {'from': admin, 'required_confs': confs})
